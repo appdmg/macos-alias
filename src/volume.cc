@@ -20,4 +20,4 @@ NAN_MODULE_INIT(Initialize) {
     Nan::GetFunction(Nan::New<FunctionTemplate>(MethodGetVolumeName)).ToLocalChecked());
 }
 
-NODE_MODULE(volume, Initialize)
+NODE_MODULE(NODE_GYP_MODULE_NAME, Initialize)
