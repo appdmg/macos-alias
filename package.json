@@ -23,7 +23,7 @@
     "url": "https://github.com/appdmg/macos-alias.git"
   },
   "dependencies": {
-    "nan": "^2.4.0"
+    "nan": "^2.22.0"
   },
   "engines": {
     "node": ">=10",
