@@ -13,9 +13,10 @@
   "devDependencies": {
     "fs-temp": "^1.1.1",
     "mocha": "^8.4.0",
-    "standard": "^8.3.0"
+    "standard": "^16.0.4"
   },
   "scripts": {
+    "lint": "standard --fix",
     "test": "standard && mocha"
   },
   "repository": {
