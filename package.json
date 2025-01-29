@@ -16,6 +16,7 @@
     "standard": "^16.0.4"
   },
   "scripts": {
+    "lint": "standard --fix",
     "test": "standard && mocha"
   },
   "repository": {

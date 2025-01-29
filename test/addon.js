@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
-var assert = require('assert')
-var addon = require('../build/Release/volume.node')
+const assert = require('assert')
+const addon = require('../build/Release/volume.node')
 
 describe('addon on macOS', function () {
   before(function () {
