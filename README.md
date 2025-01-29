@@ -68,5 +68,5 @@ node-gyp rebuild
 ## Tests
 
 ```sh
-mocha
+npm test
 ```
