@@ -13,14 +13,10 @@ I intend to add something like `alias.write(buf, path)` and `alias.read(path)`.
 
 To install and run the `macos-alias` package you need:
 
-* Mac OS X 10.11 or newer
+* Mac OS X 10.15 or newer
 * macOS 11 or newer
-* NodeJS 10 or newer
+* NodeJS 18 or newer
 * Python 3.10 or newer
-
-> [!NOTE]  
-> Building for NodeJS 10 - 16 requires Python 3.10.  
-> Building for NodeJS 18 and newer supports using latest Python releases.
 
 
 ## Installation
