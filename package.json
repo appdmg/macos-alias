@@ -11,7 +11,7 @@
     "Jozef Izso <jozef.izso@gmail.com>"
   ],
   "devDependencies": {
-    "fs-temp": "^1.1.1",
+    "fs-temp": "^1.2.1",
     "mocha": "^8.4.0",
     "standard": "^16.0.4"
   },
