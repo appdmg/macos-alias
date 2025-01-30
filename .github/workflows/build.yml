@@ -13,16 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ macos-13, ubuntu-latest ]
-        node: [ 10, 12, 14, 16, 18, 20, 22 ]
+        node: [ 18, 20, 22 ]
         include:
-        - node: 10
-          python: '3.10'
-        - node: 12
-          python: '3.10'
-        - node: 14
-          python: '3.10'
-        - node: 16
-          python: '3.10'
         - node: 18
           python: '3.12'
         - node: 20
