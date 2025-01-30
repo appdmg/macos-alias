@@ -13,7 +13,7 @@
   "devDependencies": {
     "fs-temp": "^1.2.1",
     "mocha": "^8.4.0",
-    "standard": "^16.0.4"
+    "standard": "^17.1.2"
   },
   "scripts": {
     "lint": "standard --fix",
