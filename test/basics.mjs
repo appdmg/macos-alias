@@ -1,11 +1,13 @@
 /* eslint-env mocha */
 
-const lib = require('../')
+import { decode, encode, create, isAlias } from '../index.js'
 
-const fs = require('fs')
-const path = require('path')
-const temp = require('fs-temp')
-const assert = require('assert')
+import { unlinkSync } from 'fs'
+import { join } from 'path'
+import { writeFileSync } from 'fs-temp'
+import { equal, deepEqual } from 'assert'
+
+const __dirname = import.meta.dirname
 
 const rawData = Buffer.from(
   'AAAAAAEqAAIAAApUZXN0IFRpdGxlAAAAAAAAAAAAAAAAAAAAAADO615USCsA' +
@@ -19,11 +21,11 @@ const rawData = Buffer.from(
 
 describe('decode', function () {
   it('should parse a simple alias', function () {
-    const info = lib.decode(rawData)
+    const info = decode(rawData)
 
-    assert.equal(info.version, 2)
+    equal(info.version, 2)
 
-    assert.deepEqual(info.volume, {
+    deepEqual(info.volume, {
       name: 'Test Title',
       created: new Date('2014-01-02T18:20:04.000Z'),
       signature: 'H+',
@@ -31,12 +33,12 @@ describe('decode', function () {
       abspath: '/Volumes/Test Title'
     })
 
-    assert.deepEqual(info.parent, {
+    deepEqual(info.parent, {
       id: 19,
       name: '.background'
     })
 
-    assert.deepEqual(info.target, {
+    deepEqual(info.target, {
       type: 'file',
       filename: 'TestBkg.tiff',
       id: 20,
@@ -49,10 +51,10 @@ describe('decode', function () {
 
 describe('encode', function () {
   it('should encode a simple alias', function () {
-    const info = lib.decode(rawData)
-    const buf = lib.encode(info)
+    const info = decode(rawData)
+    const buf = encode(info)
 
-    assert.deepEqual(rawData, buf)
+    deepEqual(rawData, buf)
   })
 })
 
@@ -60,11 +62,11 @@ describe('create', function () {
   it('should create a simple alias', function () {
     const rootDir = process.env.ROOT_VOLUME || __dirname
     const volumeName = process.platform === 'darwin' ? undefined : 'Test Volume'
-    const buf = lib.create(path.join(rootDir, 'basics.js'), { volumeName })
-    const info = lib.decode(buf)
+    const buf = create(join(rootDir, 'basics.js'), { volumeName })
+    const info = decode(buf)
 
-    assert.equal('file', info.target.type)
-    assert.equal('basics.js', info.target.filename)
+    equal('file', info.target.type)
+    equal('basics.js', info.target.filename)
   })
 })
 
@@ -72,20 +74,20 @@ describe('isAlias', function () {
   let aliasFile, garbageFile
 
   before(function () {
-    aliasFile = temp.writeFileSync(Buffer.from('626f6f6b000000006d61726b00000000', 'hex'))
-    garbageFile = temp.writeFileSync(Buffer.from('Hello my name is Linus!'))
+    aliasFile = writeFileSync(Buffer.from('626f6f6b000000006d61726b00000000', 'hex'))
+    garbageFile = writeFileSync(Buffer.from('Hello my name is Linus!'))
   })
 
   after(function () {
-    fs.unlinkSync(aliasFile)
-    fs.unlinkSync(garbageFile)
+    unlinkSync(aliasFile)
+    unlinkSync(garbageFile)
   })
 
   it('should identify alias', function () {
-    assert.equal(lib.isAlias(aliasFile), true)
+    equal(isAlias(aliasFile), true)
   })
 
   it('should identify non-alias', function () {
-    assert.equal(lib.isAlias(garbageFile), false)
+    equal(isAlias(garbageFile), false)
   })
 })
