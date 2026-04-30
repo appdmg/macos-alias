@@ -1,28 +1,15 @@
-/* eslint-env mocha */
+'use strict'
 
-const assert = require('assert')
+const test = require('ava').default
 const addon = require('../build/Release/volume.node')
 
-describe('addon on macOS', function () {
-  before(function () {
-    if (process.platform !== 'darwin') {
-      this.skip()
-    }
-  })
+const macOSTest = process.platform === 'darwin' ? test : test.skip
+const nonMacOSTest = process.platform === 'darwin' ? test.skip : test
 
-  it('should find the volume name of /', function () {
-    assert.equal(addon.getVolumeName('/'), 'Macintosh HD')
-  })
+macOSTest('addon finds the root volume name on macOS', (t) => {
+  t.is(addon.getVolumeName('/'), 'Macintosh HD')
 })
 
-describe('addon on Linux', function () {
-  before(function () {
-    if (process.platform === 'darwin') {
-      this.skip()
-    }
-  })
-
-  it('getVolumeName() native functions return null', function () {
-    assert.equal(addon.getVolumeName('/'), null)
-  })
+nonMacOSTest('addon native functions return null off macOS', (t) => {
+  t.is(addon.getVolumeName('/'), null)
 })
