@@ -1,23 +1,19 @@
 # @appdmg/macos-alias
 
-Mac OS X aliases creation and reading from NodeJS.
+macOS alias creation, encoding, decoding, and detection for appdmg packages.
 
-## Attention
-
-This library does currently not handle the `book\0\0\0\0mark\0\0\0\0`-header. It only does manipulation on the raw alias data.
-
-I intend to add something like `alias.write(buf, path)` and `alias.read(path)`.
-
+This package is a deliberate native boundary. It can decode and encode alias
+buffers on any platform, but creating aliases with real volume metadata requires
+macOS.
 
 ## Requirements
 
-To install and run the `macos-alias` package you need:
+- Node.js 24 or newer
+- Python 3.13 or newer for native builds through `node-gyp`
+- macOS 11 or newer for native volume-name lookup and full alias creation
 
-* Mac OS X 10.15 or newer
-* macOS 11 or newer
-* NodeJS 18 or newer
-* Python 3.10 or newer
-
+On non-macOS systems, the native volume-name binding returns `null`. Tests and
+callers that create aliases off macOS must provide `options.volumeName`.
 
 ## Installation
 
@@ -28,41 +24,39 @@ npm install @appdmg/macos-alias
 ## Usage
 
 ```javascript
-var alias = require('@appdmg/macos-alias');
+const alias = require('@appdmg/macos-alias')
+
+const buffer = alias.create('/Applications/My App.app')
+const info = alias.decode(buffer)
 ```
 
 ## API
 
-### alias.create(target)
+### `alias.create(target, options)`
 
-Create a new alias pointing to `target`, returns a buffer.
+Creates a new alias pointing to `target` and returns a buffer.
 
-(This function performs blocking fs interaction)
+This function performs blocking filesystem interaction. On non-macOS systems,
+pass `options.volumeName` because the native volume-name lookup returns `null`.
 
-### alias.decode(buf)
+### `alias.decode(buffer)`
 
-Decodes buffer `buf` and returns an object with info about the alias.
+Decodes an alias buffer and returns an object with alias metadata.
 
-### alias.encode(info)
+### `alias.encode(info)`
 
-Encodes the `info`-object into an alias, returns a buffer.
+Encodes an alias metadata object and returns a buffer.
 
-### alias.isAlias(path)
+### `alias.isAlias(path)`
 
-Check if the file at `path` is an alias, returns a boolean.
+Checks whether the file at `path` starts with the alias-file marker.
 
-(This function performs blocking fs interaction)
+This function performs blocking filesystem interaction.
 
-## Hacking
+## Migration Notes
 
-Clone the repo and start making changes, run `node-gyp` to build the project.
+The supported runtime changed to Node.js 24 and newer.
 
-```sh
-node-gyp rebuild
-```
+The package remains CommonJS in this stage.
 
-## Tests
-
-```sh
-npm test
-```
+The test runner changed from Mocha and Standard to AVA.

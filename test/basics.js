@@ -1,11 +1,10 @@
-/* eslint-env mocha */
+'use strict'
 
-const lib = require('../')
-
-const fs = require('fs')
-const path = require('path')
-const temp = require('fs-temp')
-const assert = require('assert')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
+const test = require('ava').default
+const alias = require('../')
 
 const rawData = Buffer.from(
   'AAAAAAEqAAIAAApUZXN0IFRpdGxlAAAAAAAAAAAAAAAAAAAAAADO615USCsA' +
@@ -17,75 +16,65 @@ const rawData = Buffer.from(
   'ABMAEy9Wb2x1bWVzL1Rlc3QgVGl0bGUA//8AAA==', 'base64'
 )
 
-describe('decode', function () {
-  it('should parse a simple alias', function () {
-    const info = lib.decode(rawData)
+test('decode parses a simple alias', (t) => {
+  const info = alias.decode(rawData)
 
-    assert.equal(info.version, 2)
+  t.is(info.version, 2)
 
-    assert.deepEqual(info.volume, {
-      name: 'Test Title',
-      created: new Date('2014-01-02T18:20:04.000Z'),
-      signature: 'H+',
-      type: 'other',
-      abspath: '/Volumes/Test Title'
-    })
+  t.deepEqual(info.volume, {
+    name: 'Test Title',
+    created: new Date('2014-01-02T18:20:04.000Z'),
+    signature: 'H+',
+    type: 'other',
+    abspath: '/Volumes/Test Title'
+  })
 
-    assert.deepEqual(info.parent, {
-      id: 19,
-      name: '.background'
-    })
+  t.deepEqual(info.parent, {
+    id: 19,
+    name: '.background'
+  })
 
-    assert.deepEqual(info.target, {
-      type: 'file',
-      filename: 'TestBkg.tiff',
-      id: 20,
-      created: new Date('2014-01-02T18:20:08.000Z'),
-      path: 'Test Title:.background:',
-      abspath: '/.background/TestBkg.tiff'
-    })
+  t.deepEqual(info.target, {
+    type: 'file',
+    filename: 'TestBkg.tiff',
+    id: 20,
+    created: new Date('2014-01-02T18:20:08.000Z'),
+    path: 'Test Title:.background:',
+    abspath: '/.background/TestBkg.tiff'
   })
 })
 
-describe('encode', function () {
-  it('should encode a simple alias', function () {
-    const info = lib.decode(rawData)
-    const buf = lib.encode(info)
+test('encode creates byte-identical alias data', (t) => {
+  const info = alias.decode(rawData)
+  const buf = alias.encode(info)
 
-    assert.deepEqual(rawData, buf)
-  })
+  t.deepEqual(buf, rawData)
 })
 
-describe('create', function () {
-  it('should create a simple alias', function () {
-    const rootDir = process.env.ROOT_VOLUME || __dirname
-    const volumeName = process.platform === 'darwin' ? undefined : 'Test Volume'
-    const buf = lib.create(path.join(rootDir, 'basics.js'), { volumeName })
-    const info = lib.decode(buf)
+test('create builds an alias for a file', (t) => {
+  const rootDir = process.env.ROOT_VOLUME || __dirname
+  const volumeName = process.platform === 'darwin' ? undefined : 'Test Volume'
+  const target = path.join(rootDir, 'basics.js')
+  const buf = alias.create(target, { volumeName })
+  const info = alias.decode(buf)
 
-    assert.equal('file', info.target.type)
-    assert.equal('basics.js', info.target.filename)
-  })
+  t.is(info.target.type, 'file')
+  t.is(info.target.filename, 'basics.js')
 })
 
-describe('isAlias', function () {
-  let aliasFile, garbageFile
+test('isAlias identifies alias files', (t) => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'macos-alias-'))
 
-  before(function () {
-    aliasFile = temp.writeFileSync(Buffer.from('626f6f6b000000006d61726b00000000', 'hex'))
-    garbageFile = temp.writeFileSync(Buffer.from('Hello my name is Linus!'))
-  })
+  try {
+    const aliasFile = path.join(tmpDir, 'alias')
+    const garbageFile = path.join(tmpDir, 'garbage')
 
-  after(function () {
-    fs.unlinkSync(aliasFile)
-    fs.unlinkSync(garbageFile)
-  })
+    fs.writeFileSync(aliasFile, Buffer.from('626f6f6b000000006d61726b00000000', 'hex'))
+    fs.writeFileSync(garbageFile, Buffer.from('Hello my name is Linus!'))
 
-  it('should identify alias', function () {
-    assert.equal(lib.isAlias(aliasFile), true)
-  })
-
-  it('should identify non-alias', function () {
-    assert.equal(lib.isAlias(garbageFile), false)
-  })
+    t.true(alias.isAlias(aliasFile))
+    t.false(alias.isAlias(garbageFile))
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  }
 })

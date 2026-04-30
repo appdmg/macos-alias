@@ -1,9 +1,9 @@
 {
-  "name": "node-v18",
+  "name": "node-v24",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "18"
+      "version": "24"
     }
   }
 }
