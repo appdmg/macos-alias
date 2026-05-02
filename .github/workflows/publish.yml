@@ -7,37 +7,85 @@ on:
 permissions:
   contents: read
   id-token: write
+  attestations: write
+  artifact-metadata: write
 
 jobs:
   publish:
-    runs-on: macos-13
-
-    environment:
-      name: production
-      url: https://www.npmjs.com/package/@appdmg/macos-alias
+    name: publish to npmjs
+    runs-on: macos-15-intel
 
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
-    - name: setup node 20
-      uses: actions/setup-node@v4
+    - name: setup node 24
+      uses: actions/setup-node@v6
       with:
-        node-version: 20
-        registry-url: ${{ vars.NODE_REGISTRY_URL }}
+        node-version: 24
+        registry-url: https://registry.npmjs.org
+        cache: npm
 
-    - name: setup python 3.10
-      uses: actions/setup-python@v5
+    - name: setup python 3.13
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.10'
+        python-version: '3.13'
 
-    - name: setup npm
-      run: npm install -g npm@11
+    - name: verify publish toolchain
+      run: |
+        node --version
+        npm --version
+        node -e "const version = require('node:child_process').execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(); const [major, minor, patch] = version.split('.').map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) throw new Error('npm 11.5.1 or newer is required for trusted publishing')"
+
+    - name: prepare test volume
+      id: test_volume
+      run: |
+        hdiutil create macos_alias_volume_hfs.dmg -ov -size 32m -fs HFS+ -volname "macos_alias"
+        hdiutil attach macos_alias_volume_hfs.dmg
+        cp test/basics.js /Volumes/macos_alias
+        echo "path=/Volumes/macos_alias" > "$GITHUB_OUTPUT"
 
     - name: npm ci
       run: npm ci
 
-    - name: npm publish
-      run: npm publish --provenance --access public
+    - name: npm test
+      run: npm test
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NODE_REGISTRY_TOKEN }}
+        ROOT_VOLUME: ${{ steps.test_volume.outputs.path }}
+
+    - name: cleanup test volume
+      if: always()
+      run: hdiutil detach /Volumes/macos_alias || true
+
+    - name: audit dependencies
+      run: npm audit --audit-level=moderate
+
+    - name: verify runtime dependency tree
+      run: npm ls --omit=dev --all
+
+    - name: pack package
+      id: pack
+      run: |
+        mkdir -p dist
+        npm pack --json --pack-destination dist > dist/pack.json
+        tarball="$(find dist -maxdepth 1 -name '*.tgz' -print -quit)"
+        test -n "$tarball"
+        echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+
+    - name: attest npm package artifact
+      uses: actions/attest@v4
+      with:
+        subject-path: ${{ steps.pack.outputs.tarball }}
+
+    - name: upload npm package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: npm-package
+        path: ${{ steps.pack.outputs.tarball }}
+        if-no-files-found: error
+
+    - name: publish package
+      run: npm publish "$TARBALL" --provenance --access public
+      env:
+        TARBALL: ${{ steps.pack.outputs.tarball }}
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
